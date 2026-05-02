@@ -8,172 +8,265 @@
 </head>
 
 <body>
-  <main class="app">
-    <!-- HERO SECTION -->
-    <section class="hero">
-      <div class="hero-text">
-        <div class="badge">💧 HydraSense Nexus</div>
-        <h1>Predict water stress before it becomes a crisis.</h1>
-        <p>
-          HydraSense Nexus turns snowpack, rainfall, and reservoir data into a clear
-          Water Availability Index, future prediction, health warning, and chatbot explanation.
+  <!-- LOGIN SCREEN -->
+  <section id="loginScreen" class="login-screen">
+    <div class="floating-animal turtle">🐢</div>
+    <div class="floating-animal dolphin">🐬</div>
+    <div class="floating-animal otter">🦦</div>
+
+    <div class="login-card">
+      <div class="logo-bubble">💧</div>
+      <h1>HydraSense Nexus</h1>
+      <p>
+        Predict water stress, understand drought risk, and get smart guidance for your community.
+      </p>
+
+      <div class="input-group">
+        <label>Name</label>
+        <input id="nameInput" type="text" placeholder="Enter your name" />
+      </div>
+
+      <div class="input-group">
+        <label>Location</label>
+        <input id="locationInput" type="text" placeholder="Example: Tracy, CA" />
+      </div>
+
+      <button id="loginBtn" class="main-btn">Enter App</button>
+
+      <p class="tiny-note">
+        Demo app for H2O Hackathon 🌊
+      </p>
+    </div>
+  </section>
+
+  <!-- MAIN APP -->
+  <main id="appScreen" class="app hidden">
+    <!-- TOP NAV -->
+    <nav class="top-nav">
+      <div class="brand">
+        <span class="brand-icon">💧</span>
+        <span>HydraSense Nexus</span>
+      </div>
+
+      <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#dashboard">Predictions</a>
+        <a href="#chatbot">Chatbot</a>
+      </div>
+
+      <button id="logoutBtn" class="small-btn">Logout</button>
+    </nav>
+
+    <!-- HOME SCREEN -->
+    <section id="home" class="home-screen">
+      <div class="home-left">
+        <p class="welcome-pill">🌊 Welcome, <span id="userNameDisplay">Explorer</span></p>
+        <h1>Water data, but make it understandable.</h1>
+        <p class="home-subtitle">
+          HydraSense Nexus turns drought data into beautiful predictions, health warnings,
+          and simple advice for real people.
         </p>
 
-        <div class="hero-buttons">
-          <a href="#dashboard" class="btn primary">View Dashboard</a>
-          <a href="#chatbot" class="btn secondary">Ask the Bot</a>
+        <div class="home-buttons">
+          <a href="#dashboard" class="main-btn link-btn">View Predictions</a>
+          <a href="#chatbot" class="ghost-btn">Ask HydraBot</a>
         </div>
       </div>
 
-      <div class="score-card">
-        <p class="small-label">Current selected area</p>
-        <h2 id="selectedLocation">Tracy, CA</h2>
-
-        <div class="score-row">
-          <div>
-            <p class="small-label">Water Availability Index</p>
-            <p id="waiScore" class="big-score">42</p>
-          </div>
-          <span id="statusBadge" class="status warning">Warning</span>
+      <div class="home-visual">
+        <div class="sun-orb">☀️</div>
+        <div class="water-card">
+          <div class="wave">🌊</div>
+          <h2 id="homeWAI">42</h2>
+          <p>Current WAI Score</p>
         </div>
-
-        <p id="mainInsight" class="insight">
-          Low rainfall and declining reservoir levels are creating moderate water stress.
-        </p>
+        <div class="animal-row">
+          <span>🐢</span>
+          <span>🦆</span>
+          <span>🐬</span>
+        </div>
       </div>
     </section>
 
-    <!-- ARCHITECTURE SECTION -->
-    <section class="architecture">
-      <div class="mini-card">
-        <div class="icon">🗃️</div>
-        <h3>Data Input</h3>
-        <p>Snowpack, rainfall, and reservoir levels</p>
+    <!-- FEATURE CARDS LIKE YOUR EXAMPLE -->
+    <section class="feature-grid">
+      <a href="#learnDroughts" class="feature-card peach">
+        <span class="feature-animal">🦦</span>
+        <h3>Learn About Droughts</h3>
+        <p>Understand why water shortages happen and how communities are affected.</p>
+      </a>
+
+      <a href="#dashboard" class="feature-card blue">
+        <span class="feature-animal">🐬</span>
+        <h3>See Future Predictions</h3>
+        <p>View water availability trends and 30-day WAI estimates.</p>
+      </a>
+
+      <a href="#community" class="feature-card green">
+        <span class="feature-animal">🐢</span>
+        <h3>Help Your Community</h3>
+        <p>Get water-saving actions that actually make sense.</p>
+      </a>
+
+      <a href="#chatbot" class="feature-card purple">
+        <span class="feature-animal">🤖</span>
+        <h3>Talk With HydraBot</h3>
+        <p>Ask why your area is safe, warning, or critical.</p>
+      </a>
+    </section>
+
+    <!-- LEARN DROUGHTS -->
+    <section id="learnDroughts" class="info-section">
+      <div>
+        <p class="section-label">Drought Education</p>
+        <h2>What is drought?</h2>
+        <p>
+          Drought happens when a region has less water than usual for a long period of time.
+          It can be caused by low rainfall, reduced snowpack, high heat, or low reservoir storage.
+        </p>
       </div>
 
-      <div class="mini-card">
-        <div class="icon">🧠</div>
-        <h3>WAI + Prediction</h3>
-        <p>Normalize, weight, combine, and forecast</p>
-      </div>
-
-      <div class="mini-card">
-        <div class="icon">🗺️</div>
-        <h3>Interactive Map</h3>
-        <p>Color-coded water risk by location</p>
-      </div>
-
-      <div class="mini-card">
-        <div class="icon">💬</div>
-        <h3>Chatbot</h3>
-        <p>Explains results and gives advice</p>
+      <div class="mini-science-card">
+        <h3>💡 Science Drop</h3>
+        <p>
+          Snowpack acts like a natural water bank. When mountain snow melts, it slowly feeds rivers
+          and reservoirs. Less snowpack can mean less stored water later.
+        </p>
       </div>
     </section>
 
     <!-- DASHBOARD SECTION -->
-    <section id="dashboard" class="dashboard">
-      <!-- MAP PANEL -->
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>Interactive Water Map</h2>
-            <p>Click a region to update the dashboard.</p>
+    <section id="dashboard" class="dashboard-section">
+      <div class="section-header">
+        <p class="section-label">Prediction System</p>
+        <h2>Water Availability Dashboard</h2>
+        <p>Click a data card to update the WAI score, prediction, and health warning.</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Interactive Water Data</h3>
+              <p>Powered by API or demo data</p>
+            </div>
+            <span>🗺️</span>
           </div>
-          <span class="panel-icon">🌊</span>
+
+          <div id="locationGrid" class="location-grid"></div>
         </div>
 
-        <div id="locationGrid" class="location-grid">
-          <!-- JavaScript will add location cards here -->
+        <div class="panel dark-panel">
+          <p class="small-label">Selected Area</p>
+          <h3 id="selectedLocation">Tracy, CA</h3>
+
+          <div class="score-row">
+            <div>
+              <p class="small-label">Water Availability Index</p>
+              <h2 id="waiScore">42</h2>
+            </div>
+            <span id="statusBadge" class="status warning">Warning</span>
+          </div>
+
+          <p id="mainInsight" class="insight">
+            Low rainfall and declining reservoir levels are creating moderate water stress.
+          </p>
         </div>
       </div>
 
-      <!-- WAI BREAKDOWN PANEL -->
-      <div class="panel">
-        <div class="panel-header">
-          <div>
-            <h2>WAI Breakdown</h2>
-            <p>WAI = 30% snowpack + 30% rainfall + 40% reservoir</p>
+      <div class="dashboard-grid second">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>WAI Breakdown</h3>
+              <p>WAI = 30% snowpack + 30% precipitation + 40% reservoir</p>
+            </div>
+            <span>📊</span>
           </div>
-          <span class="panel-icon">📊</span>
+
+          <div class="metric">
+            <div class="metric-label">
+              <span>❄️ Snowpack</span>
+              <strong id="snowpackValue">48%</strong>
+            </div>
+            <div class="bar">
+              <div id="snowpackBar" class="bar-fill"></div>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-label">
+              <span>🌧️ Precipitation</span>
+              <strong id="rainfallValue">32%</strong>
+            </div>
+            <div class="bar">
+              <div id="rainfallBar" class="bar-fill"></div>
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="metric-label">
+              <span>💧 Reservoir</span>
+              <strong id="reservoirValue">44%</strong>
+            </div>
+            <div class="bar">
+              <div id="reservoirBar" class="bar-fill"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="metric">
-          <div class="metric-label">
-            <span>❄️ Snowpack</span>
-            <strong id="snowpackValue">48%</strong>
-          </div>
-          <div class="bar">
-            <div id="snowpackBar" class="bar-fill"></div>
-          </div>
-        </div>
-
-        <div class="metric">
-          <div class="metric-label">
-            <span>🌧️ Rainfall</span>
-            <strong id="rainfallValue">32%</strong>
-          </div>
-          <div class="bar">
-            <div id="rainfallBar" class="bar-fill"></div>
-          </div>
-        </div>
-
-        <div class="metric">
-          <div class="metric-label">
-            <span>💧 Reservoir</span>
-            <strong id="reservoirValue">44%</strong>
-          </div>
-          <div class="bar">
-            <div id="reservoirBar" class="bar-fill"></div>
-          </div>
-        </div>
-
-        <div class="prediction-card">
+        <div class="panel prediction-panel">
           <p>Predicted WAI in 30 days</p>
           <h2 id="predictedWAI">34</h2>
-          <div id="forecastBars" class="forecast-bars">
-            <!-- JavaScript will add forecast bars here -->
-          </div>
+          <div id="forecastBars" class="forecast-bars"></div>
         </div>
       </div>
     </section>
 
-    <!-- HEALTH + CHATBOT SECTION -->
-    <section class="bottom-grid">
-      <!-- HEALTH PANEL -->
+    <!-- HEALTH + COMMUNITY -->
+    <section id="community" class="bottom-grid">
       <div class="panel">
         <div class="panel-header">
           <div>
-            <h2>Health Risk System</h2>
+            <h3>Health Risk System</h3>
             <p>Environment → hydration → circulation</p>
           </div>
-          <span class="panel-icon">🫀</span>
+          <span>🫀</span>
         </div>
 
-        <div id="healthBox" class="health-box">
-          <!-- JavaScript will update this -->
-        </div>
+        <div id="healthBox" class="health-box"></div>
 
         <p class="medical-note">
           Medical logic: low water access plus high heat can increase dehydration risk.
-          Dehydration may lower blood volume, so the cardiovascular system compensates
-          by increasing heart rate.
+          Dehydration may lower blood volume, so the cardiovascular system compensates by increasing heart rate.
         </p>
       </div>
 
-      <!-- CHATBOT PANEL -->
-      <div id="chatbot" class="panel">
+      <div class="panel action-panel">
+        <h3>Community Action Tips</h3>
+        <div class="tip-list">
+          <div>🚿 Take shorter showers</div>
+          <div>🌱 Limit outdoor watering</div>
+          <div>🔧 Fix leaks quickly</div>
+          <div>♻️ Reuse water safely</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHATBOT -->
+    <section id="chatbot" class="chatbot-section">
+      <div class="panel chatbot-panel">
         <div class="panel-header">
           <div>
-            <h2>HydraBot Assistant</h2>
-            <p>Rule-based chatbot using selected location data.</p>
+            <h3>HydraBot Assistant</h3>
+            <p>Ask questions about your area’s water risk.</p>
           </div>
-          <span class="panel-icon">🤖</span>
+          <span>🤖</span>
         </div>
 
         <div id="chatWindow" class="chat-window">
           <div class="bot-message">
-            Hi! I’m the HydraSense assistant. Click a location, then ask me why the area is safe,
-            warning, or critical.
+            Hi! I’m HydraBot. Ask me why your area is safe, warning, or critical.
           </div>
         </div>
 
@@ -184,7 +277,7 @@
             placeholder="Ask: Why is my area red?"
             value="Why is my area yellow?"
           />
-          <button id="sendBtn" class="btn primary">Send</button>
+          <button id="sendBtn" class="main-btn">Send</button>
         </div>
 
         <div class="prompt-buttons">
