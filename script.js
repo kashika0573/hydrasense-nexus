@@ -3,47 +3,65 @@ const API_URL = "https://scoringapi.h2ohackathon.org/Challenge/json";
 let locations = [
   {
     name: "Demo: Tracy, CA",
+    date: "Demo",
     snowpack: 0.48,
     rainfall: 0.32,
     reservoir: 0.44,
     temp: 94,
     trend: -2.1,
-    insight: "Low rainfall and declining reservoir levels are creating moderate water stress."
+    insight: "Demo data: Low rainfall and declining reservoir levels are creating moderate water stress."
   },
   {
     name: "Demo: Sacramento, CA",
+    date: "Demo",
     snowpack: 0.72,
     rainfall: 0.66,
     reservoir: 0.78,
     temp: 86,
     trend: -0.4,
-    insight: "Reservoir storage is strong, and recent rainfall has helped stabilize water availability."
+    insight: "Demo data: Reservoir storage is strong, and recent rainfall has helped stabilize water availability."
   },
   {
     name: "Demo: Fresno, CA",
+    date: "Demo",
     snowpack: 0.36,
     rainfall: 0.28,
     reservoir: 0.31,
     temp: 99,
     trend: -2.8,
-    insight: "Low rainfall, high heat, and falling reservoir levels are increasing water risk."
+    insight: "Demo data: Low rainfall, high heat, and falling reservoir levels are increasing water risk."
   },
   {
     name: "Demo: Redding, CA",
+    date: "Demo",
     snowpack: 0.81,
     rainfall: 0.74,
     reservoir: 0.69,
     temp: 83,
     trend: 0.2,
-    insight: "Healthy snowpack and rainfall are supporting safer water availability."
+    insight: "Demo data: Healthy snowpack and rainfall are supporting safer water availability."
   }
 ];
 
 let selectedIndex = 0;
 
+/* BASIC HELPERS */
+
 function clamp(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
+
+function cleanNumber(value) {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) {
+    return 0;
+  }
+
+  return number;
+}
+
+/* WAI LOGIC */
 
 function calculateWAI(location) {
   return Math.round(
@@ -105,45 +123,45 @@ function getDrivers(location) {
   return drivers;
 }
 
-function estimateTrend(currentRecord, previousRecord) {
-  if (!currentRecord || !previousRecord) {
-    return -1;
-  }
-
-  const currentLocation = convertAPIRecordToLocation(currentRecord, 0, null);
-  const previousLocation = convertAPIRecordToLocation(previousRecord, 0, null);
-
-  const currentWAI = calculateWAI(currentLocation);
-  const previousWAI = calculateWAI(previousLocation);
-
-  return currentWAI - previousWAI;
-}
-
-function cleanNumber(value) {
-  const number = Number(value);
-
-  if (Number.isNaN(number)) {
-    return 0;
-  }
-
-  return number;
-}
+/* API CONVERSION */
 
 function convertAPIRecordToLocation(record, index, previousRecord) {
   const snowpackPercent = cleanNumber(record.Snowpack);
   const precipPercent = cleanNumber(record.Precip);
   const reservoirPercent = cleanNumber(record.Reservoir);
 
-  const trend = previousRecord ? estimateTrend(record, previousRecord) : -1;
+  const currentLocation = {
+    snowpack: clamp(snowpackPercent, 0, 150) / 100,
+    rainfall: clamp(precipPercent, 0, 150) / 100,
+    reservoir: clamp(reservoirPercent, 0, 150) / 100
+  };
+
+  let trend = -1;
+
+  if (previousRecord) {
+    const previousLocation = {
+      snowpack: clamp(cleanNumber(previousRecord.Snowpack), 0, 150) / 100,
+      rainfall: clamp(cleanNumber(previousRecord.Precip), 0, 150) / 100,
+      reservoir: clamp(cleanNumber(previousRecord.Reservoir), 0, 150) / 100
+    };
+
+    const currentWAI = calculateWAI(currentLocation);
+    const previousWAI = calculateWAI(previousLocation);
+
+    trend = currentWAI - previousWAI;
+  }
+
+  const fakeTemperature = index === 0 ? 94 : index === 1 ? 91 : index === 2 ? 88 : 86;
 
   return {
     name: `Water Data: ${record.Date}`,
-    snowpack: clamp(snowpackPercent, 0, 150) / 100,
-    rainfall: clamp(precipPercent, 0, 150) / 100,
-    reservoir: clamp(reservoirPercent, 0, 150) / 100,
-    temp: index === 0 ? 94 : 88,
+    date: record.Date,
+    snowpack: currentLocation.snowpack,
+    rainfall: currentLocation.rainfall,
+    reservoir: currentLocation.reservoir,
+    temp: fakeTemperature,
     trend: trend,
-    insight: `Challenge API data from ${record.Date}: snowpack is ${snowpackPercent}%, precipitation is ${precipPercent}%, and reservoir level is ${reservoirPercent}%.`
+    insight: `Live H2O Hackathon API data from ${record.Date}: snowpack is ${snowpackPercent}%, precipitation is ${precipPercent}%, and reservoir level is ${reservoirPercent}%.`
   };
 }
 
@@ -157,7 +175,7 @@ async function loadWaterDataFromAPI() {
 
     const data = await response.json();
 
-    console.log("API water data:", data);
+    console.log("Loaded H2O Hackathon API data:", data);
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error("API returned no usable data.");
@@ -171,8 +189,16 @@ async function loadWaterDataFromAPI() {
     selectedIndex = 0;
   } catch (error) {
     console.error("Could not load API data. Using demo data instead.", error);
+
+    const mainInsight = document.getElementById("mainInsight");
+    if (mainInsight) {
+      mainInsight.textContent =
+        "Could not load live API data, so the app is using demo water data instead.";
+    }
   }
 }
+
+/* CHATBOT */
 
 function chatbotAnswer(question, selected, wai, predicted) {
   const q = question.toLowerCase();
@@ -183,41 +209,56 @@ function chatbotAnswer(question, selected, wai, predicted) {
     q.includes("why") ||
     q.includes("red") ||
     q.includes("yellow") ||
+    q.includes("green") ||
     q.includes("explain")
   ) {
     return `${selected.name} is currently marked as ${status} because of ${drivers.join(
       ", "
-    )}. The WAI combines snowpack, precipitation, and reservoir levels into one score, so weaker inputs lower the final water availability score.`;
+    )}. The WAI combines snowpack, precipitation, and reservoir levels into one score. If one or more inputs are low, the final water availability score drops.`;
   }
 
   if (
     q.includes("do") ||
     q.includes("advice") ||
     q.includes("save") ||
-    q.includes("help")
+    q.includes("help") ||
+    q.includes("community")
   ) {
-    return `For ${selected.name}, the best actions are to reduce outdoor watering, fix leaks, reuse water when safe, and pay attention to local water alerts. Small daily changes matter most when the WAI is trending downward.`;
+    return `For ${selected.name}, helpful actions include reducing outdoor watering, fixing leaks, taking shorter showers, reusing water when safe, and following local water alerts. These actions matter most when the WAI is trending downward.`;
   }
 
   if (
     q.includes("health") ||
     q.includes("danger") ||
     q.includes("dehydration") ||
-    q.includes("body")
+    q.includes("body") ||
+    q.includes("heart") ||
+    q.includes("kidney")
   ) {
-    return "Health connection: low water availability plus high heat can increase dehydration risk. Dehydration lowers blood volume, which can make the heart pump faster to maintain circulation and can also stress the kidneys.";
+    return "Health connection: low water availability plus high heat can increase dehydration risk. Dehydration lowers blood volume, which can make the heart beat faster to maintain cardiac output and can also stress the kidneys.";
   }
 
   if (
     q.includes("future") ||
     q.includes("predict") ||
-    q.includes("30")
+    q.includes("30") ||
+    q.includes("trend")
   ) {
     return `Based on the recent trend, ${selected.name} is predicted to have a WAI near ${predicted} in about 30 days. This is a simple trend-based estimate, not a full machine learning model.`;
   }
 
+  if (
+    q.includes("wai") ||
+    q.includes("score") ||
+    q.includes("index")
+  ) {
+    return `The Water Availability Index, or WAI, is a 0–100 score. It uses 30% snowpack, 30% precipitation, and 40% reservoir level. ${selected.name} currently has a WAI of ${wai}.`;
+  }
+
   return `I can explain why your area has this WAI, give water-saving advice, discuss health risks, or estimate the future water score for ${selected.name}.`;
 }
+
+/* TESTS */
 
 function runLogicTests() {
   const tests = [
@@ -317,25 +358,35 @@ function runLogicTests() {
   });
 }
 
+/* DASHBOARD RENDERING */
+
 function updateDashboard() {
   const selected = locations[selectedIndex];
   const wai = calculateWAI(selected);
   const predicted = predictWAI(wai, selected.trend);
   const status = getStatus(wai);
 
-  document.getElementById("selectedLocation").textContent = selected.name;
-  document.getElementById("waiScore").textContent = wai;
-  document.getElementById("mainInsight").textContent = selected.insight;
-
+  const selectedLocation = document.getElementById("selectedLocation");
+  const waiScore = document.getElementById("waiScore");
+  const mainInsight = document.getElementById("mainInsight");
   const statusBadge = document.getElementById("statusBadge");
-  statusBadge.textContent = status.label;
-  statusBadge.className = `status ${status.className}`;
+  const predictedWAI = document.getElementById("predictedWAI");
+  const homeWAI = document.getElementById("homeWAI");
+
+  if (selectedLocation) selectedLocation.textContent = selected.name;
+  if (waiScore) waiScore.textContent = wai;
+  if (mainInsight) mainInsight.textContent = selected.insight;
+  if (predictedWAI) predictedWAI.textContent = predicted;
+  if (homeWAI) homeWAI.textContent = wai;
+
+  if (statusBadge) {
+    statusBadge.textContent = status.label;
+    statusBadge.className = `status ${status.className}`;
+  }
 
   updateMetric("snowpack", selected.snowpack);
   updateMetric("rainfall", selected.rainfall);
   updateMetric("reservoir", selected.reservoir);
-
-  document.getElementById("predictedWAI").textContent = predicted;
 
   renderForecastBars(selected, wai);
   renderLocationCards();
@@ -345,12 +396,18 @@ function updateDashboard() {
 function updateMetric(type, value) {
   const percent = Math.round(value * 100);
 
-  document.getElementById(`${type}Value`).textContent = `${percent}%`;
-  document.getElementById(`${type}Bar`).style.width = `${clamp(percent)}%`;
+  const valueElement = document.getElementById(`${type}Value`);
+  const barElement = document.getElementById(`${type}Bar`);
+
+  if (valueElement) valueElement.textContent = `${percent}%`;
+  if (barElement) barElement.style.width = `${clamp(percent)}%`;
 }
 
 function renderLocationCards() {
   const locationGrid = document.getElementById("locationGrid");
+
+  if (!locationGrid) return;
+
   locationGrid.innerHTML = "";
 
   locations.forEach((location, index) => {
@@ -387,6 +444,9 @@ function renderLocationCards() {
 
 function renderForecastBars(location, wai) {
   const forecastBars = document.getElementById("forecastBars");
+
+  if (!forecastBars) return;
+
   forecastBars.innerHTML = "";
 
   const days = [0, 7, 14, 21, 30];
@@ -397,8 +457,8 @@ function renderForecastBars(location, wai) {
 
     item.className = "forecast-item";
     item.innerHTML = `
-      <div 
-        class="forecast-bar" 
+      <div
+        class="forecast-bar"
         style="height: ${Math.max(12, score)}px"
         title="Day ${day}: WAI ${score}">
       </div>
@@ -411,6 +471,9 @@ function renderForecastBars(location, wai) {
 
 function renderHealthBox(location, wai) {
   const healthBox = document.getElementById("healthBox");
+
+  if (!healthBox) return;
+
   const risk = getHealthRisk(wai, location.temp);
 
   if (risk) {
@@ -434,8 +497,13 @@ function renderHealthBox(location, wai) {
   }
 }
 
+/* CHAT RENDERING */
+
 function addMessage(text, sender) {
   const chatWindow = document.getElementById("chatWindow");
+
+  if (!chatWindow) return;
+
   const message = document.createElement("div");
 
   message.className = sender === "user" ? "user-message" : "bot-message";
@@ -447,6 +515,9 @@ function addMessage(text, sender) {
 
 function sendQuestion() {
   const chatInput = document.getElementById("chatInput");
+
+  if (!chatInput) return;
+
   const question = chatInput.value.trim();
 
   if (!question) {
@@ -470,27 +541,80 @@ function setupEventListeners() {
   const chatInput = document.getElementById("chatInput");
   const promptButtons = document.querySelectorAll(".prompt");
 
-  sendBtn.addEventListener("click", sendQuestion);
+  if (sendBtn) {
+    sendBtn.addEventListener("click", sendQuestion);
+  }
 
-  chatInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      sendQuestion();
-    }
-  });
+  if (chatInput) {
+    chatInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        sendQuestion();
+      }
+    });
+  }
 
   promptButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      if (!chatInput) return;
+
       chatInput.value = button.textContent;
       sendQuestion();
     });
   });
 }
 
+/* LOGIN SCREEN */
+
+function setupLogin() {
+  const loginScreen = document.getElementById("loginScreen");
+  const appScreen = document.getElementById("appScreen");
+  const loginBtn = document.getElementById("loginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const nameInput = document.getElementById("nameInput");
+  const locationInput = document.getElementById("locationInput");
+  const userNameDisplay = document.getElementById("userNameDisplay");
+
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      const name = nameInput && nameInput.value.trim() ? nameInput.value.trim() : "Explorer";
+      const location =
+        locationInput && locationInput.value.trim()
+          ? locationInput.value.trim()
+          : "your community";
+
+      if (userNameDisplay) {
+        userNameDisplay.textContent = name;
+      }
+
+      addMessage(
+        `Welcome ${name}! I’ll help you understand water risk for ${location}.`,
+        "bot"
+      );
+
+      if (loginScreen) loginScreen.classList.add("hidden");
+      if (appScreen) appScreen.classList.remove("hidden");
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      if (appScreen) appScreen.classList.add("hidden");
+      if (loginScreen) loginScreen.classList.remove("hidden");
+    });
+  }
+}
+
+/* START APP */
+
 document.addEventListener("DOMContentLoaded", async () => {
   runLogicTests();
+  setupLogin();
 
-  document.getElementById("mainInsight").textContent =
-    "Loading live water data from the H2O Hackathon API...";
+  const mainInsight = document.getElementById("mainInsight");
+  if (mainInsight) {
+    mainInsight.textContent =
+      "Loading live water data from the H2O Hackathon API...";
+  }
 
   await loadWaterDataFromAPI();
 
