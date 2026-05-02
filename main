@@ -1,2 +1,338 @@
-//hi everyone
-//I am silly
+import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Droplets, MapPin, Bot, HeartPulse, TrendingDown, AlertTriangle, Waves, Gauge, CloudRain, Snowflake, Database, Brain, Map, MessageCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+const locations = [
+  {
+    name: "Tracy, CA",
+    snowpack: 0.48,
+    rainfall: 0.32,
+    reservoir: 0.44,
+    temp: 94,
+    trend: -2.1,
+    insight: "Low rainfall and declining reservoir levels are creating moderate water stress."
+  },
+  {
+    name: "Sacramento, CA",
+    snowpack: 0.72,
+    rainfall: 0.66,
+    reservoir: 0.78,
+    temp: 86,
+    trend: -0.4,
+    insight: "Reservoir storage is strong, and recent rainfall has helped stabilize water availability."
+  },
+  {
+    name: "Fresno, CA",
+    snowpack: 0.36,
+    rainfall: 0.28,
+    reservoir: 0.31,
+    temp: 99,
+    trend: -2.8,
+    insight: "Low rainfall, high heat, and falling reservoir levels are increasing water risk."
+  },
+  {
+    name: "Redding, CA",
+    snowpack: 0.81,
+    rainfall: 0.74,
+    reservoir: 0.69,
+    temp: 83,
+    trend: 0.2,
+    insight: "Healthy snowpack and rainfall are supporting safer water availability."
+  }
+];
+
+function calculateWAI(location) {
+  return Math.round((0.3 * location.snowpack + 0.3 * location.rainfall + 0.4 * location.reservoir) * 100);
+}
+
+function getStatus(wai) {
+  if (wai >= 70) return { label: "Safe", dot: "bg-emerald-500", bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700" };
+  if (wai >= 40) return { label: "Warning", dot: "bg-yellow-500", bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-700" };
+  return { label: "Critical", dot: "bg-red-500", bg: "bg-red-50", border: "border-red-200", text: "text-red-700" };
+}
+
+function predictWAI(wai, trend) {
+  return Math.max(0, Math.min(100, Math.round(wai + trend * 4)));
+}
+
+function Bar({ label, value, icon: Icon }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2 text-slate-600">
+          <Icon className="h-4 w-4" />
+          <span>{label}</span>
+        </div>
+        <span className="font-semibold text-slate-800">{Math.round(value * 100)}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.round(value * 100)}%` }}
+          transition={{ duration: 0.8 }}
+          className="h-full rounded-full bg-slate-900"
+        />
+      </div>
+    </div>
+  );
+}
+
+function chatbotAnswer(question, selected, wai, predicted) {
+  const q = question.toLowerCase();
+  const status = getStatus(wai).label.toLowerCase();
+  const drivers = [];
+  if (selected.rainfall < 0.45) drivers.push("low rainfall");
+  if (selected.reservoir < 0.45) drivers.push("low reservoir storage");
+  if (selected.snowpack < 0.5) drivers.push("reduced snowpack");
+  if (drivers.length === 0) drivers.push("stable water inputs");
+
+  if (q.includes("why") || q.includes("red") || q.includes("yellow") || q.includes("explain")) {
+    return `${selected.name} is currently marked as ${status} because of ${drivers.join(", ")}. The WAI combines snowpack, rainfall, and reservoir levels into one score, so weaker inputs lower the final water availability score.`;
+  }
+
+  if (q.includes("do") || q.includes("advice") || q.includes("save") || q.includes("help")) {
+    return `For ${selected.name}, the best actions are to reduce outdoor watering, fix leaks, reuse water when safe, and pay attention to local water alerts. Small daily changes matter most when the WAI is trending downward.`;
+  }
+
+  if (q.includes("health") || q.includes("danger") || q.includes("dehydration") || q.includes("body")) {
+    return `Health connection: low water availability plus high heat can increase dehydration risk. Dehydration lowers blood volume, which can make the heart pump faster to maintain circulation and can also stress the kidneys.`;
+  }
+
+  if (q.includes("future") || q.includes("predict") || q.includes("30")) {
+    return `Based on the recent trend, ${selected.name} is predicted to have a WAI near ${predicted} in about 30 days. This is a simple trend-based estimate, not a full machine learning model.`;
+  }
+
+  return `I can explain why your area has this WAI, give water-saving advice, discuss health risks, or estimate the future water score for ${selected.name}.`;
+}
+
+export default function hydrousTech() {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [question, setQuestion] = useState("Why is my area yellow?");
+  const [chat, setChat] = useState([
+    { role: "bot", text: "Hi! I’m the Hydrous Tech assistant.💅 Click a location, then ask me why the area is safe, warning, or critical." }
+  ]);
+
+  const selected = locations[selectedIndex];
+  const wai = calculateWAI(selected);
+  const predicted = predictWAI(wai, selected.trend);
+  const status = getStatus(wai);
+  const healthRisk = wai < 40 && selected.temp >= 90;
+
+  const miniForecast = useMemo(() => {
+    return [0, 7, 14, 21, 30].map((day) => ({ day, score: Math.max(0, Math.min(100, Math.round(wai + selected.trend * (day / 7)))) }));
+  }, [selected, wai]);
+
+  function sendQuestion() {
+    if (!question.trim()) return;
+    const answer = chatbotAnswer(question, selected, wai, predicted);
+    setChat((prev) => [...prev, { role: "user", text: question }, { role: "bot", text: answer }]);
+    setQuestion("");
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-4 text-slate-900 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-[2rem] border border-sky-100 bg-white/80 p-6 shadow-xl backdrop-blur md:p-8"
+        >
+          <div className="grid gap-6 md:grid-cols-[1.4fr_.8fr] md:items-center">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700">
+                <Droplets className="h-4 w-4" />
+                HydrousTech
+              </div>
+              <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
+                Predict water stress before it becomes a crisis.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+                A hackathon-ready dashboard that turns snowpack, rainfall, and reservoir data into a clear Water Availability Index, map visualization, future prediction, health warning, and chatbot explanation.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button className="rounded-full px-5">View Dashboard</Button>
+                <Button variant="outline" className="rounded-full px-5">Ask the Bot</Button>
+              </div>
+            </div>
+            <Card className="rounded-[2rem] border-sky-100 bg-slate-950 text-white shadow-2xl">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-300">Current selected area</span>
+                  <MapPin className="h-5 w-5 text-sky-300" />
+                </div>
+                <h2 className="mt-3 text-2xl font-bold">{selected.name}</h2>
+                <div className="mt-6 flex items-end justify-between">
+                  <div>
+                    <p className="text-sm text-slate-300">Water Availability Index</p>
+                    <p className="text-6xl font-black">{wai}</p>
+                  </div>
+                  <div className={`rounded-2xl px-4 py-2 text-sm font-bold ${status.bg} ${status.text}`}>
+                    {status.label}
+                  </div>
+                </div>
+                <p className="mt-5 rounded-2xl bg-white/10 p-4 text-sm leading-6 text-slate-200">{selected.insight}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
+
+        <div className="grid gap-6 lg:grid-cols-4">
+          {[{ icon: Database, title: "Data Input", text: "Snowpack, rainfall, reservoir levels" }, { icon: Brain, title: "WAI + Prediction", text: "Normalize, weight, combine, forecast" }, { icon: Map, title: "Interactive Map", text: "Color-coded water risk by location" }, { icon: MessageCircle, title: "Chatbot", text: "Explains results and gives advice" }].map((item, i) => (
+            <motion.div key={item.title} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+              <Card className="h-full rounded-[1.5rem] border-sky-100 bg-white/80 shadow-sm">
+                <CardContent className="p-5">
+                  <item.icon className="mb-4 h-7 w-7 text-sky-600" />
+                  <h3 className="font-bold text-slate-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
+          <Card className="rounded-[2rem] border-sky-100 bg-white/90 shadow-lg">
+            <CardContent className="p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black">Interactive Water Map</h2>
+                  <p className="text-sm text-slate-500">Click a region to update the dashboard.</p>
+                </div>
+                <Waves className="h-7 w-7 text-sky-600" />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {locations.map((location, index) => {
+                  const score = calculateWAI(location);
+                  const s = getStatus(score);
+                  return (
+                    <button
+                      key={location.name}
+                      onClick={() => setSelectedIndex(index)}
+                      className={`rounded-[1.5rem] border p-5 text-left transition hover:-translate-y-1 hover:shadow-md ${selectedIndex === index ? "border-slate-900 bg-slate-50" : `${s.border} ${s.bg}`}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-3 w-3 rounded-full ${s.dot}`} />
+                          <span className="font-bold">{location.name}</span>
+                        </div>
+                        <span className="text-2xl font-black">{score}</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">{getStatus(score).label} water availability</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[2rem] border-sky-100 bg-white/90 shadow-lg">
+            <CardContent className="space-y-5 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-black">WAI Breakdown</h2>
+                  <p className="text-sm text-slate-500">WAI = 30% snowpack + 30% rainfall + 40% reservoir</p>
+                </div>
+                <Gauge className="h-7 w-7 text-sky-600" />
+              </div>
+              <Bar label="Snowpack" value={selected.snowpack} icon={Snowflake} />
+              <Bar label="Rainfall" value={selected.rainfall} icon={CloudRain} />
+              <Bar label="Reservoir" value={selected.reservoir} icon={Droplets} />
+              <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-300">Predicted WAI in 30 days</p>
+                    <p className="mt-1 text-4xl font-black">{predicted}</p>
+                  </div>
+                  <TrendingDown className="h-8 w-8 text-sky-300" />
+                </div>
+                <div className="mt-5 flex items-end gap-2">
+                  {miniForecast.map((point) => (
+                    <div key={point.day} className="flex flex-1 flex-col items-center gap-2">
+                      <div className="w-full rounded-t-xl bg-sky-300" style={{ height: `${Math.max(12, point.score)}px` }} />
+                      <span className="text-[10px] text-slate-300">{point.day}d</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
+          <Card className="rounded-[2rem] border-sky-100 bg-white/90 shadow-lg">
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center gap-3">
+                <HeartPulse className="h-7 w-7 text-red-500" />
+                <div>
+                  <h2 className="text-2xl font-black">Health Risk System</h2>
+                  <p className="text-sm text-slate-500">Environment → hydration → circulation</p>
+                </div>
+              </div>
+              {healthRisk ? (
+                <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-5">
+                  <div className="flex items-center gap-2 font-bold text-red-700">
+                    <AlertTriangle className="h-5 w-5" />
+                    High dehydration risk
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-red-700">
+                    WAI is below 40 and temperature is high. Dehydration can reduce blood volume, increase heart rate, and place extra stress on the kidneys.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
+                  <div className="font-bold text-emerald-700">No extreme health warning right now</div>
+                  <p className="mt-3 text-sm leading-6 text-emerald-700">
+                    Current conditions do not trigger the high-risk rule, but hydration and conservation still matter.
+                  </p>
+                </div>
+              )}
+              <div className="mt-5 rounded-[1.5rem] bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                Medical logic: low water access + high heat can increase dehydration risk. Dehydration may lower plasma volume, so the cardiovascular system compensates by increasing heart rate.
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[2rem] border-sky-100 bg-white/90 shadow-lg">
+            <CardContent className="p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <Bot className="h-7 w-7 text-sky-600" />
+                <div>
+                  <h2 className="text-2xl font-black">HydraBot Assistant</h2>
+                  <p className="text-sm text-slate-500">Rule-based chatbot using selected location data.</p>
+                </div>
+              </div>
+              <div className="h-72 space-y-3 overflow-y-auto rounded-[1.5rem] bg-slate-50 p-4">
+                {chat.map((message, index) => (
+                  <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === "user" ? "bg-slate-950 text-white" : "bg-white text-slate-700 shadow-sm"}`}>
+                      {message.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <input
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendQuestion()}
+                  placeholder="Ask: Why is my area red?"
+                  className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-sky-400"
+                />
+                <Button onClick={sendQuestion} className="rounded-full px-5">Send</Button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["Why is my area yellow?", "What should I do?", "What are the health risks?", "Predict 30 days"].map((prompt) => (
+                  <button key={prompt} onClick={() => setQuestion(prompt)} className="rounded-full bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-100">
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
